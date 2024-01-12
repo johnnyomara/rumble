@@ -26,13 +26,12 @@ export const Rumble = () => {
   const location = useLocation()
   const rumbleId = location.state.id
   const [teams, setTeams] = useState({})
+  const [assigned, setAssigned] = useState(false)
   const [mutateFunction, {data, loading, error}] = useMutation(CREATE_TEAM)
 
-
-
+  const newTeams = teamAssigner()
 
   const assignTeams = () => {
-    const newTeams = teamAssigner()
     setTeams(newTeams)
     mutateFunction({variables: {
       id: rumbleId, number: 1, teamid: Number(`${rumbleId}1`)
@@ -43,6 +42,8 @@ export const Rumble = () => {
     mutateFunction({variables: {
       id: rumbleId, number: 1, teamid:  Number(`${rumbleId}3`)
     }})
+    console.log(newTeams)
+    setAssigned(true)
   }
 
 
@@ -51,19 +52,28 @@ return (
     <div>
       Rumble {rumbleId}
       {
-      // Object.keys(teams).length === 0 &&
+      !assigned &&
       <button onClick={() => assignTeams()}>Assign Teams</button>
       }
     </div>
     <div>
     <div>
       <div>Team 1</div>
+      {assigned && Object.entries(newTeams[1]).map(([key, value]) => {
+        return <div>{key}</div>
+      })}
     </div>
     <div>
       <div>Team 2</div>
+      {assigned && Object.entries(newTeams[2]).map(([key, value]) => {
+        return <div>{key}</div>
+      })}
     </div>
     <div>
       <div>Team 3</div>
+      {assigned && Object.entries(newTeams[3]).map(([key, value]) => {
+        return <div>{key}</div>
+      })}
     </div>
     </div>
   </div>
