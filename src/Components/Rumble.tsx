@@ -32,9 +32,17 @@ export const Rumble = () => {
 
 
   const assignTeams = () => {
-    setTeams(teamAssigner())
-    console.log(teams)
-        // mutateFunction({variables: {teams: teams}})
+    const newTeams = teamAssigner()
+    setTeams(newTeams)
+    mutateFunction({variables: {
+      id: rumbleId, number: 1, teamid: Number(`${rumbleId}1`)
+    }})
+    mutateFunction({variables: {
+      id: rumbleId, number: 1, teamid:  Number(`${rumbleId}2`)
+    }})
+    mutateFunction({variables: {
+      id: rumbleId, number: 1, teamid:  Number(`${rumbleId}3`)
+    }})
   }
 
 
@@ -43,7 +51,7 @@ return (
     <div>
       Rumble {rumbleId}
       {
-      Object.keys(teams).length === 0 &&
+      // Object.keys(teams).length === 0 &&
       <button onClick={() => assignTeams()}>Assign Teams</button>
       }
     </div>
