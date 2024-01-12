@@ -14,23 +14,6 @@ const client = new Client({
 })
 client.connect()
 
-const Teams = new graphql.GraphQLObjectType({
-  name: 'Teams',
-  extensions: {
-    joinMonster: {
-      sqlTable: 'rumble',
-      uniqueKey: 'id'
-    }
-  },
-  fields: () => ({
-    teams: {
-      teamOne: {},
-      teamTwo: {},
-      teamThree: {}
-    }
-  })
-});
-
 const Rumble = new graphql.GraphQLObjectType({
   name: 'Rumble',
   extensions: {
@@ -41,11 +24,30 @@ const Rumble = new graphql.GraphQLObjectType({
   },
   fields: () => ({
     id: { type: graphql.GraphQLString },
-    // teams: {type: Teams}
   })
 });
 
 Rumble._typeConfig = {
+  sqlTable: 'rumble',
+  uniqueKey: 'id',
+}
+
+const Teams = new graphql.GraphQLObjectType({
+  name: 'Teams',
+  extensions: {
+    joinMonster: {
+      sqlTable: 'teams',
+      uniqueKey: 'teamid'
+    }
+  },
+  fields: () => ({
+    id: { type: graphql.GraphQLString },
+    number: { type: graphql.GraphQLInt},
+    teamid: { type: graphql.GraphQLInt}
+  })
+})
+
+Teams._typeConfig = {
   sqlTable: 'rumble',
   uniqueKey: 'id',
 }
@@ -55,14 +57,6 @@ const QueryRoot = new graphql.GraphQLObjectType({
   name: 'Query',
   fields: () => ({
     rumbles: {
-      type: new graphql.GraphQLList(Rumble),
-      resolve: (parent, args, context, resolveInfo) => {
-        return joinMonster.default(resolveInfo, {}, sql => {
-          return client.query(sql)
-        })
-      }
-    },
-    teams: {
       type: new graphql.GraphQLList(Rumble),
       resolve: (parent, args, context, resolveInfo) => {
         return joinMonster.default(resolveInfo, {}, sql => {
@@ -88,33 +82,22 @@ const MutationRoot = new graphql.GraphQLObjectType({
           throw new Error("Failed to create rumble")
         }
       }
-    }
-    // teams: {
-    //   type: Rumble,
-    //   args: {
-    //     id: { type: new graphql.GraphQLNonNull(graphql.GraphQLInt)},
-    //     teams: {type: new graphql.GraphQLList(Teams)}
-    //   },
-    //   resolve: async (parent, args, context, resolveInfo) => {
-    //     try {
-    //       return (await client.query("INSERT INTO rumble(teams) VALUES ($args.teams) RETURNING *", [args.teams])).rows[0]
-    //     } catch (err) {
-    //       throw new Error("Failed to create rumble")
-    //     }
-    //   }
-      // type: Teams,
-      // args: {
-      //   id: { type: new graphql.GraphQLNonNull(graphql.GraphQLInt) },
-      //   teams: { }
-      // },
-      // resolve: async (parent, args, context, resolveInfo) => {
-      //   try {
-      //     return (await client.query("INSERT INTO rumble(id) VALUES ($teams) RETURNING *", [args.id, args.teams]))
-      //   } catch (err) {
-      //     throw new Error("Failed to assign teams")
-      //   }
-      // }
-    // }
+    },
+    teams: {
+      type: Teams,
+      args: {
+        id: { type: new graphql.GraphQLNonNull(graphql.GraphQLInt)},
+        number: { type: new graphql.GraphQLNonNull(graphql.GraphQLInt)},
+        teamid: { type: new graphql.GraphQLNonNull(graphql.GraphQLInt)}
+      },
+      resolve: async (parent, args, context, resolveInfo) => {
+        try {
+          return (await client.query("INSERT INTO teams(id, number, teamid) VALUES ($1, $2, $3) RETURNING *", [args.id, args.number, args.teamid])).rows[0]
+        } catch (err) {
+          throw new Error("Failed to create teams")
+        }
+      }
+    },
   })
 })
 
@@ -127,6 +110,7 @@ const schema = new graphql.GraphQLSchema({
 const port = process.env.PORT || 4000
 
 const app = express();
+
 app.use('/api', cors(), graphqlHTTP({
   schema: schema,
   graphiql: true,

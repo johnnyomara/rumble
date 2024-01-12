@@ -14,10 +14,10 @@ const RUMBLE_QUERY = gql`
      }
 `
 
-const CREATE_TEAMS = gql`
-mutation teams($id: Int!) {
-  teams(id: rumbleId) {
-      teams
+const CREATE_TEAM = gql`
+mutation teams($id: Int!, $number: Int!, $teamid: Int!) {
+  teams(id: $id, number: $number, teamid: $teamid) {
+  id, number, teamid
   }
 }
 `
@@ -26,14 +26,14 @@ export const Rumble = () => {
   const location = useLocation()
   const rumbleId = location.state.id
   const [teams, setTeams] = useState({})
-  const [mutateFunction, {data, loading, error}] = useMutation(CREATE_TEAMS)
+  const [mutateFunction, {data, loading, error}] = useMutation(CREATE_TEAM)
 
 
 
 
   const assignTeams = () => {
     setTeams(teamAssigner())
-    console.log(location.state)
+    console.log(teams)
         // mutateFunction({variables: {teams: teams}})
   }
 
