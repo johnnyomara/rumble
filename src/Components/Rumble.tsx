@@ -22,28 +22,53 @@ mutation teams($id: Int!, $number: Int!, $teamid: Int!) {
 }
 `
 
+const CREATE_WRESTLER = gql`
+mutation wrestlers($wrestlerid: Int!, $number: Int!, $teamid: Int!) {
+  wrestlers(wrestlerid: $wrestlerid, number: $number, teamid: $teamid) {
+  wrestlerid, number, teamid
+  }
+}
+`
+
 export const Rumble = () => {
   const location = useLocation()
   const rumbleId = location.state.id
   const [teams, setTeams] = useState({})
   const [assigned, setAssigned] = useState(false)
-  const [mutateFunction, {data, loading, error}] = useMutation(CREATE_TEAM)
+  const [createTeams] = useMutation(CREATE_TEAM)
+  const [createWrestlers] = useMutation(CREATE_WRESTLER)
+
 
   const newTeams = teamAssigner()
 
+  const assignWrestlers = (teams: any) => {
+
+    for (const [team, value] of Object.entries(teams)) {
+      for(const [wrestler, stats] of Object.entries(teams[team])) {
+        createWrestlers({
+          variables: {
+            teamid: Number(team),
+            number: Number(wrestler),
+            wrestlerid: Number(`${rumbleId}${wrestler}`)
+          }
+        })
+      }
+    }
+  }
+
   const assignTeams = () => {
     setTeams(newTeams)
-    mutateFunction({variables: {
+    createTeams({variables: {
       id: rumbleId, number: 1, teamid: Number(`${rumbleId}1`)
     }})
-    mutateFunction({variables: {
-      id: rumbleId, number: 1, teamid:  Number(`${rumbleId}2`)
+    createTeams({variables: {
+      id: rumbleId, number: 2, teamid:  Number(`${rumbleId}2`)
     }})
-    mutateFunction({variables: {
-      id: rumbleId, number: 1, teamid:  Number(`${rumbleId}3`)
+    createTeams({variables: {
+      id: rumbleId, number: 3, teamid:  Number(`${rumbleId}3`)
     }})
-    console.log(newTeams)
     setAssigned(true)
+    assignWrestlers(newTeams)
   }
 
 
@@ -56,7 +81,7 @@ return (
       <button onClick={() => assignTeams()}>Assign Teams</button>
       }
     </div>
-    <div>
+    {/* <div>
     <div>
       <div>Team 1</div>
       {assigned && Object.entries(newTeams[1]).map(([key, value]) => {
@@ -75,7 +100,7 @@ return (
         return <div>{key}</div>
       })}
     </div>
-    </div>
+    </div> */}
   </div>
   )
 }

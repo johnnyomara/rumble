@@ -48,7 +48,31 @@ const Teams = new graphql.GraphQLObjectType({
 })
 
 Teams._typeConfig = {
-  sqlTable: 'rumble',
+  sqlTable: 'teams',
+  uniqueKey: 'id',
+}
+
+const Wrestler = new graphql.GraphQLObjectType({
+  name: 'Wrestler',
+  extensions: {
+    joinMonster: {
+      sqlTable: 'Wrestlers',
+      uniqueKey: 'wrestlerid'
+    }
+  },
+  fields: () => ({
+    wrestlerid: { type: graphql.GraphQLInt },
+    number: { type: graphql.GraphQLInt},
+    teamid: { type: graphql.GraphQLInt},
+    name: { type: graphql.GraphQLString },
+    eliminated: { type: graphql.GraphQLBoolean },
+    eliminates: { type: new graphql.GraphQLList(graphql.GraphQLInt) },
+    eliminatedby: { type: new graphql.GraphQLList(graphql.GraphQLInt) }
+  })
+})
+
+Wrestler._typeConfig = {
+  sqlTable: 'wrestler',
   uniqueKey: 'id',
 }
 
@@ -95,6 +119,25 @@ const MutationRoot = new graphql.GraphQLObjectType({
           return (await client.query("INSERT INTO teams(id, number, teamid) VALUES ($1, $2, $3) RETURNING *", [args.id, args.number, args.teamid])).rows[0]
         } catch (err) {
           throw new Error("Failed to create teams")
+        }
+      }
+    },
+    wrestlers: {
+      type: Wrestler,
+      args: {
+        wrestlerid: { type: new graphql.GraphQLNonNull(graphql.GraphQLInt) },
+        number: { type: new graphql.GraphQLNonNull(graphql.GraphQLInt) },
+        teamid: { type: new graphql.GraphQLNonNull(graphql.GraphQLInt) },
+        name: { type: graphql.GraphQLString },
+        eliminated: { type: graphql.GraphQLBoolean },
+        eliminates: { type: new graphql.GraphQLList(graphql.GraphQLInt) },
+        eliminatedby: { type: new graphql.GraphQLList(graphql.GraphQLInt) }
+      },
+      resolve: async (parent, args, context, resolveInfo) => {
+        try {
+          return (await client.query("INSERT INTO wrestler(wrestlerid, number, teamid, name, eliminated, eliminates, eliminatedBy) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *", [args.wrestlerid, args.number, args.teamid, args.name, args.eliminated, args.eliminates, args.eliminatedby])).rows[0]
+        } catch (err) {
+          throw new Error("Failed to create wrestlers")
         }
       }
     },
