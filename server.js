@@ -25,7 +25,6 @@ const Rumble = new graphql.GraphQLObjectType({
   fields: () => ({
     id: { type: graphql.GraphQLString },
     teams: { type: new graphql.GraphQLList(Teams) },
-
   })
 });
 
@@ -43,10 +42,11 @@ const Teams = new graphql.GraphQLObjectType({
     }
   },
   fields: () => ({
-    id: { type: graphql.GraphQLString },
+    id: { type: graphql.GraphQLInt},
     number: { type: graphql.GraphQLInt},
     teamid: { type: graphql.GraphQLInt},
-    wrestlers: { type: new graphql.GraphQLList(Wrestler) }
+    wrestlers: { type: new graphql.GraphQLList(Wrestler) },
+    rumble: {type: Rumble}
   })
 })
 
@@ -60,18 +60,19 @@ const Wrestler = new graphql.GraphQLObjectType({
   extensions: {
     joinMonster: {
       sqlTable: 'Wrestlers',
-      uniqueKey: 'id'
+      uniqueKey: 'wrestlerid'
     }
   },
   fields: () => ({
     wrestlerid: { type: graphql.GraphQLInt },
     number: { type: graphql.GraphQLInt},
     teamid: { type: graphql.GraphQLInt},
-    // team: Teams,
+    team: {type: Teams},
     name: { type: graphql.GraphQLString },
     eliminated: { type: graphql.GraphQLBoolean },
     eliminates: { type: new graphql.GraphQLList(graphql.GraphQLInt) },
-    eliminatedby: { type: new graphql.GraphQLList(graphql.GraphQLInt) }
+    eliminatedby: { type: new graphql.GraphQLList(graphql.GraphQLInt) },
+    id: {type: new graphql.GraphQLList(graphql.GraphQLInt)}
   })
 })
 
@@ -90,17 +91,47 @@ const QueryRoot = new graphql.GraphQLObjectType({
   name: 'Query',
   fields: () => ({
     rumble: {
+      type: new graphql.GraphQLList(Rumble),
+      args: {
+        id: { type: new graphql.GraphQLNonNull(graphql.GraphQLInt)},
+        // team: { type: new graphql.GraphQLNonNull(graphql.GraphQLInt)}
+      },
+      resolve: async (parent, args, context, resolveInfo) => {
+        try {
+          return (await client.query("SELECT * FROM rumble WHERE id = ($1)", [args.id])).rows
+        }
+        catch {
+          throw new Error('failed to fetch game')
+        }
+      }
+    },
+    teams: {
       type: new graphql.GraphQLList(Teams),
       args: {
         id: { type: new graphql.GraphQLNonNull(graphql.GraphQLInt)},
-        team: { type: new graphql.GraphQLNonNull(graphql.GraphQLInt)}
+        // team: { type: new graphql.GraphQLNonNull(graphql.GraphQLInt)}
       },
       resolve: async (parent, args, context, resolveInfo) => {
         try {
           return (await client.query("SELECT * FROM teams WHERE id = ($1)", [args.id])).rows
         }
         catch {
-          throw new Error('failed to fetch game')
+          throw new Error('failed to fetch teams')
+        }
+      }
+    },
+    wrestlers: {
+      type: new graphql.GraphQLList(Wrestler),
+      args: {
+        id: { type: new graphql.GraphQLNonNull(graphql.GraphQLInt)},
+        // team: { type: new graphql.GraphQLNonNull(graphql.GraphQLInt)}
+      },
+      resolve: async (parent, args, context, resolveInfo) => {
+        try {
+          return (await client.query("SELECT * FROM wrestlers WHERE id = ($1)", [args.id])).rows
+        }
+        catch {
+          throw new Error('failed to fetch wrestlers')
         }
       }
     }
@@ -148,7 +179,7 @@ const MutationRoot = new graphql.GraphQLObjectType({
         name: { type: graphql.GraphQLString },
         eliminated: { type: graphql.GraphQLBoolean },
         eliminates: { type: new graphql.GraphQLList(graphql.GraphQLInt) },
-        eliminatedby: { type: new graphql.GraphQLList(graphql.GraphQLInt) }
+        eliminatedby: { type: new graphql.GraphQLList(graphql.GraphQLInt) },
       },
       resolve: async (parent, args, context, resolveInfo) => {
         try {

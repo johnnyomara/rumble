@@ -1,10 +1,15 @@
 import * as React from 'react';
 import * as ReactDOM from 'react-dom/client';
 import { codeGenerator, teamAssigner } from '../Utils';
-import { useQuery, gql, useMutation } from '@apollo/client';
+import { useQuery, gql, useMutation, InMemoryCache, ApolloClient } from '@apollo/client';
 import { graphql } from 'graphql';
 import {useLocation} from 'react-router-dom';
 import { useState } from 'react';
+
+// const client = new ApolloClient({
+//   // ...other arguments...
+//   cache: new InMemoryCache(options)
+// });
 
 const RUMBLE_QUERY = gql`
      query {
@@ -81,6 +86,7 @@ return (
       <button onClick={() => assignTeams()}>Assign Teams</button>
       }
     </div>
+    {/* !!! USE APOLLO CACHE INSTEAD OF STATE !!! */}
     {/* <div>
     <div>
       <div>Team 1</div>
