@@ -24,6 +24,8 @@ const Rumble = new graphql.GraphQLObjectType({
   },
   fields: () => ({
     id: { type: graphql.GraphQLString },
+    teams: { type: new graphql.GraphQLList(Teams) },
+
   })
 });
 
@@ -43,7 +45,8 @@ const Teams = new graphql.GraphQLObjectType({
   fields: () => ({
     id: { type: graphql.GraphQLString },
     number: { type: graphql.GraphQLInt},
-    teamid: { type: graphql.GraphQLInt}
+    teamid: { type: graphql.GraphQLInt},
+    wrestlers: { type: new graphql.GraphQLList(Wrestler) }
   })
 })
 
@@ -57,13 +60,14 @@ const Wrestler = new graphql.GraphQLObjectType({
   extensions: {
     joinMonster: {
       sqlTable: 'Wrestlers',
-      uniqueKey: 'wrestlerid'
+      uniqueKey: 'id'
     }
   },
   fields: () => ({
     wrestlerid: { type: graphql.GraphQLInt },
     number: { type: graphql.GraphQLInt},
     teamid: { type: graphql.GraphQLInt},
+    // team: Teams,
     name: { type: graphql.GraphQLString },
     eliminated: { type: graphql.GraphQLBoolean },
     eliminates: { type: new graphql.GraphQLList(graphql.GraphQLInt) },
@@ -76,16 +80,27 @@ Wrestler._typeConfig = {
   uniqueKey: 'id',
 }
 
+// const game = new graphql.GraphQLObjectType({
+//   id: { type: Rumble.id},
+//   team: Teams
+// })
+
 
 const QueryRoot = new graphql.GraphQLObjectType({
   name: 'Query',
   fields: () => ({
-    rumbles: {
-      type: new graphql.GraphQLList(Rumble),
-      resolve: (parent, args, context, resolveInfo) => {
-        return joinMonster.default(resolveInfo, {}, sql => {
-          return client.query(sql)
-        })
+    rumble: {
+      type: Rumble,
+      args: {
+        id: { type: new graphql.GraphQLNonNull(graphql.GraphQLInt)},
+      },
+      resolve: async (parent, args, context, resolveInfo) => {
+        try {
+          return (await client.query("SELECT * FROM rumble WHERE id = ($1)", [args.id])).rows[0]
+        }
+        catch {
+          throw new Error('failed to fetch game')
+        }
       }
     }
   })
@@ -97,7 +112,8 @@ const MutationRoot = new graphql.GraphQLObjectType({
     rumble: {
       type: Rumble,
       args: {
-        id: { type: new graphql.GraphQLNonNull(graphql.GraphQLInt)}
+        id: { type: new graphql.GraphQLNonNull(graphql.GraphQLInt)},
+        // teams: { type: Teams}
       },
       resolve: async (parent, args, context, resolveInfo) => {
         try {
@@ -112,7 +128,8 @@ const MutationRoot = new graphql.GraphQLObjectType({
       args: {
         id: { type: new graphql.GraphQLNonNull(graphql.GraphQLInt)},
         number: { type: new graphql.GraphQLNonNull(graphql.GraphQLInt)},
-        teamid: { type: new graphql.GraphQLNonNull(graphql.GraphQLInt)}
+        teamid: { type: new graphql.GraphQLNonNull(graphql.GraphQLInt)},
+        // wrestlers: { type: {Wrestler} }
       },
       resolve: async (parent, args, context, resolveInfo) => {
         try {
