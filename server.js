@@ -90,13 +90,14 @@ const QueryRoot = new graphql.GraphQLObjectType({
   name: 'Query',
   fields: () => ({
     rumble: {
-      type: Rumble,
+      type: new graphql.GraphQLList(Teams),
       args: {
         id: { type: new graphql.GraphQLNonNull(graphql.GraphQLInt)},
+        team: { type: new graphql.GraphQLNonNull(graphql.GraphQLInt)}
       },
       resolve: async (parent, args, context, resolveInfo) => {
         try {
-          return (await client.query("SELECT * FROM rumble WHERE id = ($1)", [args.id])).rows[0]
+          return (await client.query("SELECT * FROM teams WHERE id = ($1)", [args.id])).rows
         }
         catch {
           throw new Error('failed to fetch game')
@@ -113,7 +114,6 @@ const MutationRoot = new graphql.GraphQLObjectType({
       type: Rumble,
       args: {
         id: { type: new graphql.GraphQLNonNull(graphql.GraphQLInt)},
-        // teams: { type: Teams}
       },
       resolve: async (parent, args, context, resolveInfo) => {
         try {
