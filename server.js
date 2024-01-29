@@ -60,7 +60,7 @@ const Wrestler = new graphql.GraphQLObjectType({
   extensions: {
     joinMonster: {
       sqlTable: 'Wrestlers',
-      uniqueKey: 'wrestlerid'
+      uniqueKey: 'id'
     }
   },
   fields: () => ({
@@ -72,7 +72,7 @@ const Wrestler = new graphql.GraphQLObjectType({
     eliminated: { type: graphql.GraphQLBoolean },
     eliminates: { type: new graphql.GraphQLList(graphql.GraphQLInt) },
     eliminatedby: { type: new graphql.GraphQLList(graphql.GraphQLInt) },
-    id: {type: new graphql.GraphQLList(graphql.GraphQLInt)}
+    id: { type: graphql.GraphQLInt}
   })
 })
 
@@ -176,6 +176,7 @@ const MutationRoot = new graphql.GraphQLObjectType({
         wrestlerid: { type: new graphql.GraphQLNonNull(graphql.GraphQLInt) },
         number: { type: new graphql.GraphQLNonNull(graphql.GraphQLInt) },
         teamid: { type: new graphql.GraphQLNonNull(graphql.GraphQLInt) },
+        id: { type: new graphql.GraphQLNonNull(graphql.GraphQLInt)},
         name: { type: graphql.GraphQLString },
         eliminated: { type: graphql.GraphQLBoolean },
         eliminates: { type: new graphql.GraphQLList(graphql.GraphQLInt) },
@@ -183,7 +184,7 @@ const MutationRoot = new graphql.GraphQLObjectType({
       },
       resolve: async (parent, args, context, resolveInfo) => {
         try {
-          return (await client.query("INSERT INTO wrestler(wrestlerid, number, teamid, name, eliminated, eliminates, eliminatedBy) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *", [args.wrestlerid, args.number, args.teamid, args.name, args.eliminated, args.eliminates, args.eliminatedby])).rows[0]
+          return (await client.query("INSERT INTO wrestler(wrestlerid, number, teamid, id, name, eliminated, eliminates, eliminatedBy) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *", [args.wrestlerid, args.number, args.teamid, args.id, args.name, args.eliminated, args.eliminates, args.eliminatedby])).rows[0]
         } catch (err) {
           throw new Error("Failed to create wrestlers")
         }

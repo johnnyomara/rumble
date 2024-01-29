@@ -28,9 +28,9 @@ mutation teams($id: Int!, $number: Int!, $teamid: Int!) {
 `
 
 const CREATE_WRESTLER = gql`
-mutation wrestlers($wrestlerid: Int!, $number: Int!, $teamid: Int!) {
-  wrestlers(wrestlerid: $wrestlerid, number: $number, teamid: $teamid) {
-  wrestlerid, number, teamid
+mutation wrestlers($wrestlerid: Int!, $number: Int!, $teamid: Int!, $id: Int!) {
+  wrestlers(wrestlerid: $wrestlerid, number: $number, teamid: $teamid, id: $id) {
+  wrestlerid, number, teamid, id
   }
 }
 `
@@ -54,7 +54,8 @@ export const Rumble = () => {
           variables: {
             teamid: Number(team),
             number: Number(wrestler),
-            wrestlerid: Number(`${rumbleId}${wrestler}`)
+            wrestlerid: Number(`${rumbleId}${wrestler}`),
+            id: Number(rumbleId)
           }
         })
       }
