@@ -4,17 +4,19 @@ import { codeGenerator, teamAssigner } from '../Utils';
 import { useQuery, gql, useMutation, InMemoryCache, ApolloClient } from '@apollo/client';
 import { graphql } from 'graphql';
 import {useLocation} from 'react-router-dom';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 // const client = new ApolloClient({
 //   // ...other arguments...
 //   cache: new InMemoryCache(options)
 // });
 
-const RUMBLE_QUERY = gql`
-     query {
-        rumbles {
-            id
+const WRESTLER_QUERY = gql`
+     query wrestlers ($id: Int!) {
+        wrestlers (id:$id) {
+            teamid
+            number
+            wrestlerid
         }
      }
 `
@@ -34,23 +36,51 @@ mutation wrestlers($wrestlerid: Int!, $number: Int!, $teamid: Int!, $id: Int!) {
   }
 }
 `
+export interface TeamObject {
+  [index: number]: any
+}
+
+export const teamLineup = (teamNum: Number, rumble: any) => {
+  const team = String(teamNum)
+  return(
+  <div>
+   {Object.keys(rumble[team]).map((key) => {
+    return (
+      <div>{rumble[team][key]?.number}</div>
+    )
+   })}
+  </div>
+  )
+}
+
 
 export const Rumble = () => {
   const location = useLocation()
   const rumbleId = location.state.id
-  const [teams, setTeams] = useState({})
+  const [allWrestlers, setAllWrestlers] = useState<TeamObject[]>([])
   const [assigned, setAssigned] = useState(false)
+  const [teamObject, setTeamObject] = useState({})
   const [createTeams] = useMutation(CREATE_TEAM)
   const [createWrestlers] = useMutation(CREATE_WRESTLER)
+  const { data, loading } = useQuery(WRESTLER_QUERY, {
+    variables: {id: Number(rumbleId)}
+  })
 
+useEffect(() => {
+  if (data?.wrestlers?.length === 30){
+    setAllWrestlers(data.wrestlers)
+    setAssigned(true)
+    teamObjGenerator(data.wrestlers)
+  }
+}, [allWrestlers, data])
 
   const newTeams = teamAssigner()
 
-  const assignWrestlers = (teams: any) => {
-
+  const assignWrestlers = async (teams: any) => {
+    const wrestlerArray: TeamObject[] = []
     for (const [team, value] of Object.entries(teams)) {
       for(const [wrestler, stats] of Object.entries(teams[team])) {
-        createWrestlers({
+        const created = await createWrestlers({
           variables: {
             teamid: Number(team),
             number: Number(wrestler),
@@ -58,12 +88,15 @@ export const Rumble = () => {
             id: Number(rumbleId)
           }
         })
+        wrestlerArray.push(created.data.wrestlers)
       }
     }
+    setAllWrestlers(wrestlerArray)
+    setAssigned(true)
+    teamObjGenerator(wrestlerArray)
   }
 
   const assignTeams = () => {
-    setTeams(newTeams)
     createTeams({variables: {
       id: rumbleId, number: 1, teamid: Number(`${rumbleId}1`)
     }})
@@ -73,41 +106,48 @@ export const Rumble = () => {
     createTeams({variables: {
       id: rumbleId, number: 3, teamid:  Number(`${rumbleId}3`)
     }})
-    setAssigned(true)
     assignWrestlers(newTeams)
   }
 
+  const teamObjGenerator = (teamArray: any) => {
+    const teamObj: TeamObject = {1: {}, 2: {}, 3: {}}
+    console.log(teamArray)
+    teamArray.map((wrestler: any): any => {
+      const currentTeam = wrestler.teamid
+      const currentWrestlerNumber = wrestler.number
+      teamObj[currentTeam][currentWrestlerNumber] = wrestler
+    })
+    setTeamObject(teamObj)
+  }
 
 return (
   <div>
-    <div>
-      Rumble {rumbleId}
-      {
-      !assigned &&
-      <button onClick={() => assignTeams()}>Assign Teams</button>
-      }
-    </div>
-    {/* !!! USE APOLLO CACHE INSTEAD OF STATE !!! */}
-    {/* <div>
-    <div>
-      <div>Team 1</div>
-      {assigned && Object.entries(newTeams[1]).map(([key, value]) => {
-        return <div>{key}</div>
-      })}
-    </div>
-    <div>
-      <div>Team 2</div>
-      {assigned && Object.entries(newTeams[2]).map(([key, value]) => {
-        return <div>{key}</div>
-      })}
-    </div>
-    <div>
-      <div>Team 3</div>
-      {assigned && Object.entries(newTeams[3]).map(([key, value]) => {
-        return <div>{key}</div>
-      })}
-    </div>
-    </div> */}
+      <div>Rumble {rumbleId}</div>
+      {!assigned ?
+      <div>
+        <button onClick={() => assignTeams()}>Assign Teams</button>
+      </div> :
+     <div>
+      <div>
+        <div>Team 1</div>
+        <div>
+          {teamLineup(1, teamObject)}
+        </div>
+      </div>
+      <div>
+        <div>Team 2</div>
+        <div>
+          {teamLineup(2, teamObject)}
+        </div>
+      </div>
+      <div>
+        <div>Team 3</div>
+        <div>
+          {teamLineup(3, teamObject)}
+        </div>
+      </div>
+     </div>
+    }
   </div>
   )
 }

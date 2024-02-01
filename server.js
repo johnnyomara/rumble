@@ -128,7 +128,7 @@ const QueryRoot = new graphql.GraphQLObjectType({
       },
       resolve: async (parent, args, context, resolveInfo) => {
         try {
-          return (await client.query("SELECT * FROM wrestlers WHERE id = ($1)", [args.id])).rows
+          return (await client.query("SELECT * FROM wrestler WHERE id = ($1)", [args.id])).rows
         }
         catch {
           throw new Error('failed to fetch wrestlers')
