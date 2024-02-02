@@ -4,6 +4,8 @@
   "private": true,
   "dependencies": {
     "@apollo/client": "^3.8.8",
+    "@apollo/server": "^4.10.0",
+    "@graphql-tools/schema": "^10.0.2",
     "@testing-library/jest-dom": "^5.17.0",
     "@testing-library/react": "^13.4.0",
     "@testing-library/user-event": "^13.5.0",
@@ -15,6 +17,7 @@
     "express": "^4.18.2",
     "express-graphql": "^0.12.0",
     "graphql": "^16.8.1",
+    "graphql-ws": "^5.14.3",
     "install": "^0.13.0",
     "join-monster": "^3.3.2",
     "npm": "^10.2.5",
@@ -24,7 +27,8 @@
     "react-router-dom": "^6.21.1",
     "react-scripts": "5.0.1",
     "typescript": "^5.3.3",
-    "web-vitals": "^2.1.4"
+    "web-vitals": "^2.1.4",
+    "ws": "^8.16.0"
   },
   "scripts": {
     "start": "react-scripts start",

@@ -1,8 +1,15 @@
+const {createServer} = require('http')
+const {ApolloServer} = require('@apollo/server')
+const {ApolloServerPluginDrainHttpServer} = require('@apollo/server/plugin/drainHttpServer')
+const {makeExecutableSchema} = require('@graphql-tools/schema')
+const {WebSocketServer} = require('ws')
+const {useServer} = require('graphql-ws/lib/use/ws')
 const cors = require('cors');
 const express = require('express')
 const {graphqlHTTP} = require('express-graphql')
 const graphql = require('graphql')
 const joinMonster = require('join-monster')
+
 
 
 const { Client } = require('pg')
@@ -202,11 +209,37 @@ const schema = new graphql.GraphQLSchema({
 const port = process.env.PORT || 4000
 
 const app = express();
+const httpServer = createServer(app);
+const wsServer = new WebSocketServer({
+  server: httpServer,
+  path: '/api',
+});
+
+const serverCleanup = useServer({ schema }, wsServer);
+
+const server = new ApolloServer({
+  schema,
+  plugins: [
+    // Proper shutdown for the HTTP server.
+    ApolloServerPluginDrainHttpServer({ httpServer }),
+
+    // Proper shutdown for the WebSocket server.
+    {
+      async serverWillStart() {
+        return {
+          async drainServer() {
+            await serverCleanup.dispose();
+          },
+        };
+      },
+    },
+  ],
+});
 
 app.use('/api', cors(), graphqlHTTP({
   schema: schema,
   graphiql: true,
 }));
-app.listen(port);
+httpServer.listen(port);
 
 
