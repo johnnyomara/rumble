@@ -34,7 +34,7 @@ export const Entry = () => {
     }
 
     const joinRumble = (rumbleId: string) => {
-        navigate(`/rumble/${rumbleId}`, {state: {id: rumbleId}})
+        navigate(`/rumble/${rumbleId}`, {state: {id: Number(rumbleId)}})
     }
 
     const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {

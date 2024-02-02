@@ -52,7 +52,7 @@ export const teamLineup = (teamNum: Number, rumble: any) => {
   </div>
   )
 }
-
+//HANDLE NAVIGATING FROM JOIN
 
 export const Rumble = () => {
   const location = useLocation()
@@ -67,10 +67,15 @@ export const Rumble = () => {
   })
 
 useEffect(() => {
+  console.log("HERE IS THE ID", rumbleId)
   if (data?.wrestlers?.length === 30){
     setAllWrestlers(data.wrestlers)
     setAssigned(true)
     teamObjGenerator(data.wrestlers)
+    console.log("THIS IS THE IF",data)
+  } else {
+    console.log("THIS IS THE ELSE",data)
+
   }
 }, [allWrestlers, data])
 
