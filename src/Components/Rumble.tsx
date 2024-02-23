@@ -1,10 +1,12 @@
 import * as React from 'react';
 import * as ReactDOM from 'react-dom/client';
 import { codeGenerator, teamAssigner } from '../Utils';
-import { useQuery, gql, useMutation, InMemoryCache, ApolloClient } from '@apollo/client';
+import { useQuery, gql, useMutation, InMemoryCache, ApolloClient, useSubscription } from '@apollo/client';
 import { graphql } from 'graphql';
 import {useLocation} from 'react-router-dom';
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom'
+
 
 // const client = new ApolloClient({
 //   // ...other arguments...
@@ -21,6 +23,16 @@ const WRESTLER_QUERY = gql`
      }
 `
 
+const WRESTLER_SUBSCRIPTION = gql`
+subscription wrestlers ($id: Int!) {
+   wrestlers (id:$id) {
+       teamid
+       number
+       wrestlerid
+   }
+}
+`
+
 const CREATE_TEAM = gql`
 mutation teams($id: Int!, $number: Int!, $teamid: Int!) {
   teams(id: $id, number: $number, teamid: $teamid) {
@@ -30,9 +42,9 @@ mutation teams($id: Int!, $number: Int!, $teamid: Int!) {
 `
 
 const CREATE_WRESTLER = gql`
-mutation wrestlers($wrestlerid: Int!, $number: Int!, $teamid: Int!, $id: Int!) {
-  wrestlers(wrestlerid: $wrestlerid, number: $number, teamid: $teamid, id: $id) {
-  wrestlerid, number, teamid, id
+mutation wrestlers($wrestlerid: Int!, $number: Int!, $teamid: Int!, $id: Int!, $eliminated: Boolean!) {
+  wrestlers(wrestlerid: $wrestlerid, number: $number, teamid: $teamid, id: $id, eliminated: $eliminated) {
+  wrestlerid, number, teamid, id, eliminated
   }
 }
 `
@@ -55,6 +67,7 @@ export const teamLineup = (teamNum: Number, rumble: any) => {
 //HANDLE NAVIGATING FROM JOIN
 
 export const Rumble = () => {
+  const navigate = useNavigate()
   const location = useLocation()
   const rumbleId = location.state.id
   const [allWrestlers, setAllWrestlers] = useState<TeamObject[]>([])
@@ -62,22 +75,23 @@ export const Rumble = () => {
   const [teamObject, setTeamObject] = useState({})
   const [createTeams] = useMutation(CREATE_TEAM)
   const [createWrestlers] = useMutation(CREATE_WRESTLER)
-  const { data, loading } = useQuery(WRESTLER_QUERY, {
-    variables: {id: Number(rumbleId)}
-  })
+  const { subscribeToMore, data, loading, error } = useQuery(WRESTLER_QUERY, {variables: {id: Number(rumbleId)}})
 
 useEffect(() => {
-  console.log("HERE IS THE ID", rumbleId)
+  // console.log("HERE IS THE ID", rumbleId)
+  // rumbleSubscription()
   if (data?.wrestlers?.length === 30){
     setAllWrestlers(data.wrestlers)
     setAssigned(true)
     teamObjGenerator(data.wrestlers)
-    console.log("THIS IS THE IF",data)
+    // console.log("THIS IS THE IF",data)
   } else {
-    console.log("THIS IS THE ELSE",data)
+    // console.log("THIS IS THE ELSE",data)
 
   }
 }, [allWrestlers, data])
+
+// useEffect(() => rumbleSubscription(), [])
 
   const newTeams = teamAssigner()
 
@@ -85,12 +99,14 @@ useEffect(() => {
     const wrestlerArray: TeamObject[] = []
     for (const [team, value] of Object.entries(teams)) {
       for(const [wrestler, stats] of Object.entries(teams[team])) {
+        const teamNum = Number(team)
         const created = await createWrestlers({
           variables: {
-            teamid: Number(team),
+            teamid: Number(`${rumbleId}${teamNum}`),
             number: Number(wrestler),
             wrestlerid: Number(`${rumbleId}${wrestler}`),
-            id: Number(rumbleId)
+            id: Number(rumbleId),
+            eliminated: false
           }
         })
         wrestlerArray.push(created.data.wrestlers)
@@ -115,15 +131,44 @@ useEffect(() => {
   }
 
   const teamObjGenerator = (teamArray: any) => {
-    const teamObj: TeamObject = {1: {}, 2: {}, 3: {}}
-    console.log(teamArray)
+    if (teamArray) {
+      const teamObj: TeamObject = {1: {}, 2: {}, 3: {}}
     teamArray.map((wrestler: any): any => {
-      const currentTeam = wrestler.teamid
+      const currentTeam = Number(String(wrestler.teamid).slice(-1))
       const currentWrestlerNumber = wrestler.number
       teamObj[currentTeam][currentWrestlerNumber] = wrestler
+      return teamObj
     })
+    // console.log("TEAMOBJ", teamObj)
     setTeamObject(teamObj)
+    }
   }
+
+  const rumbleSubscription = () => {
+    subscribeToMore({
+      document: WRESTLER_SUBSCRIPTION,
+      variables: {id: Number(rumbleId)},
+      updateQuery: (prev, {subscriptionData}) => {
+
+        if (!subscriptionData.data) return prev;
+        const newRumbleItem = subscriptionData.data.wrestlers;
+        return Object.assign({}, prev, {
+         newRumbleItem
+        })
+
+      //  console.log("THIS IS SUB", newRumbleItem)
+      //  setAllWrestlers(newRumbleItem)
+      //  console.log("CHECK THIS", allWrestlers)
+      //  return newRumbleItem
+      }
+    })
+  }
+
+  const viewTeam = (teamNumber: number) => {
+    const teamId = Number(String(rumbleId) + String(teamNumber))
+    navigate(`/rumble/${rumbleId}/${teamNumber}`, {state: {id: Number(rumbleId), teamId}})
+}
+
 
 return (
   <div>
@@ -135,6 +180,7 @@ return (
      <div>
       <div>
         <div>Team 1</div>
+        <button onClick={() => viewTeam(1)}>View Team</button>
         <div>
           {teamLineup(1, teamObject)}
         </div>

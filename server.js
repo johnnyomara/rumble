@@ -52,6 +52,10 @@ const Teams = new graphql.GraphQLObjectType({
     id: { type: graphql.GraphQLInt},
     number: { type: graphql.GraphQLInt},
     teamid: { type: graphql.GraphQLInt},
+    name: { type: graphql.GraphQLString},
+    eliminated: { type: graphql.GraphQLBoolean},
+    wrestlerid: { type: graphql.GraphQLInt},
+    //ADD ELIMINATES AND ELIMINATED
     wrestlers: { type: new graphql.GraphQLList(Wrestler) },
     rumble: {type: Rumble}
   })
@@ -88,11 +92,6 @@ Wrestler._typeConfig = {
   uniqueKey: 'id',
 }
 
-// const game = new graphql.GraphQLObjectType({
-//   id: { type: Rumble.id},
-//   team: Teams
-// })
-
 
 const QueryRoot = new graphql.GraphQLObjectType({
   name: 'Query',
@@ -121,6 +120,20 @@ const QueryRoot = new graphql.GraphQLObjectType({
       resolve: async (parent, args, context, resolveInfo) => {
         try {
           return (await client.query("SELECT * FROM teams WHERE id = ($1)", [args.id])).rows
+        }
+        catch {
+          throw new Error('failed to fetch teams')
+        }
+      }
+    },
+    team: {
+      type: new graphql.GraphQLList(Teams),
+      args: {
+        id: { type: new graphql.GraphQLNonNull(graphql.GraphQLInt)},
+      },
+      resolve: async (parent, args, context, resolveInfo) => {
+        try {
+          return (await client.query("SELECT * FROM wrestler WHERE teamid = ($1) ", [args.id])).rows
         }
         catch {
           throw new Error('failed to fetch teams')
@@ -200,10 +213,37 @@ const MutationRoot = new graphql.GraphQLObjectType({
   })
 })
 
+const SubscriptionRoot = new graphql.GraphQLObjectType({
+  name: 'Subscription',
+  fields: () => ({
+    wrestlers: {
+      type: new graphql.GraphQLList(Wrestler),
+      args: {
+        id: { type: new graphql.GraphQLNonNull(graphql.GraphQLInt)},
+      },
+      resolve: async (parent, args, context, resolveInfo) => {
+        try {
+          return (await client.query("SELECT * FROM wrestler WHERE id = ($1)", [args.id])).rows
+        }
+        catch {
+          throw new Error('failed to fetch wrestlers')
+        }
+      }
+    }
+  })
+})
+
+
+
+// const Subscription = {
+//   wrestlerUpdated: Wrestler
+// }
+
 
 const schema = new graphql.GraphQLSchema({
   query: QueryRoot,
-  mutation: MutationRoot
+  mutation: MutationRoot,
+  subscription: SubscriptionRoot
 });
 
 const port = process.env.PORT || 4000
@@ -220,10 +260,8 @@ const serverCleanup = useServer({ schema }, wsServer);
 const server = new ApolloServer({
   schema,
   plugins: [
-    // Proper shutdown for the HTTP server.
     ApolloServerPluginDrainHttpServer({ httpServer }),
 
-    // Proper shutdown for the WebSocket server.
     {
       async serverWillStart() {
         return {
@@ -241,5 +279,6 @@ app.use('/api', cors(), graphqlHTTP({
   graphiql: true,
 }));
 httpServer.listen(port);
+
 
 
