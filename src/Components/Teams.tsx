@@ -19,13 +19,51 @@ const TEAM_QUERY = gql`
      }
 `
 
+// export const Wrestlers = (teamObj: any) => {
+//   console.log(teamObj)
+//   return(
+//   <div>
+//    {Object.keys(teamObj).map((key) => {
+//     return (
+//       <div>{[key]}</div>
+//     )
+//    })}
+//   </div>
+//   )
+// }
+
 export const Teams = () => {
   const location = useLocation()
+  const navigate = useNavigate()
   const teamId = location.state.teamId
+  const teamNumber = location.state.teamNumber
+  const rumbleId = location.state.id
+  const [team, setTeam] = useState([])
   const { subscribeToMore, data, loading, error } = useQuery(TEAM_QUERY, {variables: {id: Number(teamId)}})
-console.log(data)
+
+if (!loading && Object.keys(team).length === 0) {
+  setTeam(data.team)
+}
+const viewWrestler = (wrestlerId: Number) => {
+  navigate(`/rumble/${rumbleId}/${teamNumber}/${wrestlerId}`, {state: {id: Number(rumbleId), wrestlerId}})
 
 
+}
 
-  return(<div>TEST</div>)
+  return(
+  <div>
+    <div>Team {teamNumber}</div>
+    <div>
+      {!loading &&
+      team.map((wrestler: any) => {
+        return (
+          <div>
+            <div>{wrestler.number}</div>
+            <div>{wrestler.name}</div>
+            <button onClick={() => viewWrestler(wrestler.wrestlerid) }>Edit</button>
+          </div>
+        )
+      })}
+    </div>
+  </div>)
 }

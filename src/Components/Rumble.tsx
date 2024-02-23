@@ -166,7 +166,7 @@ useEffect(() => {
 
   const viewTeam = (teamNumber: number) => {
     const teamId = Number(String(rumbleId) + String(teamNumber))
-    navigate(`/rumble/${rumbleId}/${teamNumber}`, {state: {id: Number(rumbleId), teamId}})
+    navigate(`/rumble/${rumbleId}/${teamNumber}`, {state: {id: Number(rumbleId), teamId, teamNumber}})
 }
 
 
