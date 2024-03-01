@@ -193,14 +193,14 @@ const MutationRoot = new graphql.GraphQLObjectType({
     wrestlers: {
       type: Wrestler,
       args: {
-        wrestlerid: { type: new graphql.GraphQLNonNull(graphql.GraphQLInt) },
-        number: { type: new graphql.GraphQLNonNull(graphql.GraphQLInt) },
-        teamid: { type: new graphql.GraphQLNonNull(graphql.GraphQLInt) },
-        id: { type: new graphql.GraphQLNonNull(graphql.GraphQLInt)},
+        wrestlerid: { type: graphql.GraphQLInt },
+        number: { type: graphql.GraphQLInt },
+        teamid: { type: graphql.GraphQLInt },
+        id: { type: graphql.GraphQLInt},
         name: { type: graphql.GraphQLString },
         eliminated: { type: graphql.GraphQLBoolean },
-        eliminates: { type: new graphql.GraphQLList(graphql.GraphQLInt) },
-        eliminatedby: { type: new graphql.GraphQLList(graphql.GraphQLInt) },
+        eliminates: { type: graphql.GraphQLInt },
+        eliminatedby: { type: graphql.GraphQLInt },
       },
       resolve: async (parent, args, context, resolveInfo) => {
         try {
@@ -210,6 +210,26 @@ const MutationRoot = new graphql.GraphQLObjectType({
         }
       }
     },
+    wrestler: {
+      type: Wrestler,
+      args: {
+        wrestlerid: { type: graphql.GraphQLInt },
+        // number: { type: graphql.GraphQLInt },
+        // teamid: { type: graphql.GraphQLInt },
+        // id: { type: graphql.GraphQLInt},
+        name: { type: graphql.GraphQLString },
+        // eliminated: { type: graphql.GraphQLBoolean },
+        // eliminates: { type: graphql.GraphQLInt },
+        // eliminatedby: { type: graphql.GraphQLInt },
+      },
+      resolve: async (parent, args, context, resolveInfo) => {
+        try {
+          return (await client.mutation("UPDATE wrestler(name) VALUES ($1) WHERE wrestlerid VALUES ($2) RETURNING *", [args.name, args.wrestlerid])).rows[0]
+        } catch (err) {
+          throw new Error("Failed to update wrestler")
+        }
+      }
+    }
   })
 })
 
