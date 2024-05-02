@@ -80,15 +80,16 @@ export const Rumble = () => {
 useEffect(() => {
   // console.log("HERE IS THE ID", rumbleId)
   // rumbleSubscription()
+  console.log(data)
   if (data?.wrestlers?.length === 30){
     setAllWrestlers(data.wrestlers)
     setAssigned(true)
     teamObjGenerator(data.wrestlers)
     // console.log("THIS IS THE IF",data)
-  } else {
+  }
     // console.log("THIS IS THE ELSE",data)
 
-  }
+
 }, [allWrestlers, data])
 
 // useEffect(() => rumbleSubscription(), [])

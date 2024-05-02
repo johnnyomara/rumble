@@ -67,6 +67,7 @@ export const Wrestler = () => {
 
   if (!loading && wrestler === undefined && data.wrestlers) {
     setWrestler(data.wrestlers[0]);
+    console.log('wrestler')
   }
 
   if (!allWrestlerQueryResults.loading && allWrestlers === undefined) {
